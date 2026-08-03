@@ -231,6 +231,45 @@
     .kpi-row{grid-template-columns:1fr}
     .data-btn{font-size:11px;padding:5px 8px}
   }
+
+  /* === Cloud Sync === */
+  .sync-btn{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:#fff;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .sync-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.3)}
+  .sync-btn.offline{background:var(--card);border:1px solid var(--border);color:var(--text-2)}
+  .sync-btn.offline:hover{border-color:var(--accent);color:var(--accent);background:#f0f9ff;transform:none;box-shadow:none}
+  .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .sync-dot.on{background:#86efac;box-shadow:0 0 6px #22c55e}
+  .sync-dot.off{background:#d1d5db}
+  .sync-dot.spin{background:#fbbf24;animation:syncspin 1s linear infinite}
+  .sync-dot.err{background:#f87171}
+  @keyframes syncspin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  .sync-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+  .sync-modal-overlay.show{display:flex}
+  .sync-modal{background:var(--card);border-radius:16px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+  .sync-modal h2{font-size:20px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .sync-modal .subtitle{font-size:13px;color:var(--text-2);margin-bottom:20px}
+  .sync-field{margin-bottom:14px}
+  .sync-field label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px}
+  .sync-field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;transition:border .2s}
+  .sync-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+  .sync-field .hint{font-size:11px;color:var(--text-3);margin-top:4px}
+  .sync-modal .btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .sync-modal .btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;min-width:100px}
+  .sync-modal .btn-primary:hover{background:#0284c7}
+  .sync-modal .btn-secondary{background:var(--card);color:var(--text-2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+  .sync-modal .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .sync-modal .btn-danger{background:var(--red-lt);color:var(--red);border:1px solid var(--red);border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+  .sync-status-box{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border)}
+  .sync-status-box .row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;gap:10px}
+  .sync-status-box .row b{color:var(--text);text-align:right;word-break:break-all}
+  .sync-step{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.6;align-items:flex-start}
+  .sync-step:last-child{border:none}
+  .sync-step .num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .sync-step code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent)}
+  .sync-sql{background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:12px;font-family:'Consolas','Monaco',monospace;line-height:1.7;margin-bottom:16px;overflow-x:auto;white-space:pre}
+  @media(max-width:900px){
+    .sync-btn{padding:6px 10px;font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -282,6 +321,7 @@
         <button class="data-btn" onclick="document.getElementById('importFile').click()" title="导入恢复数据">📤 导入恢复</button>
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
         <button class="data-btn danger" onclick="clearData()" title="清空所有数据">🗑️ 清空</button>
+        <button class="sync-btn offline" id="syncBtn" onclick="openSyncModal()" title="云同步设置"><span class="sync-dot off" id="syncDot"></span>☁️ 云同步</button>
         <div class="icon-btn" title="通知"><span class="dot"></span>🔔</div>
         <div class="icon-btn" title="日历" id="dateDisplay">📅</div>
       </div>
@@ -298,6 +338,7 @@
           <span class="ds-item">📊 已完成 <b id="totalDone">0</b> 项</span>
           <span class="ds-item">🕐 上次使用 <b id="lastVisit">首次使用</b></span>
           <span class="ds-item">💾 本地数据 <b id="dataSize">0</b> KB</span>
+          <span class="ds-item" id="syncBarItem">☁️ <b>未配置</b></span>
         </div>
 
         <!-- Backup Reminder (shows when data >= 30) -->
@@ -826,6 +867,13 @@
   </main>
 </div>
 
+<!-- Cloud Sync Modal -->
+<div class="sync-modal-overlay" id="syncModal" onclick="if(event.target===this)closeSyncModal()">
+  <div class="sync-modal" id="syncModalContent">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
 <script>
 // ========== Data ==========
 const MONTHLY_TASKS = [
@@ -944,6 +992,7 @@ function toggleTask(id, el) {
   else localStorage.removeItem('fw_' + id);
   updateDoneCount();
   updateDataStatus();
+  debouncedCloudPush();
 }
 
 function toggleCheck(el, id) {
@@ -953,6 +1002,7 @@ function toggleCheck(el, id) {
   if(done) localStorage.setItem('fw_' + id, '1');
   else localStorage.removeItem('fw_' + id);
   updateDataStatus();
+  debouncedCloudPush();
 }
 
 function updateDoneCount() {
@@ -1063,6 +1113,8 @@ updateNews();
 loadState();
 updateDoneCount();
 updateDataStatus();
+updateSyncButton();
+cloudSyncOnLoad();
 
 // ========== Data Management Functions ==========
 
@@ -1217,6 +1269,344 @@ function updateDataStatus() {
     } else {
       banner.style.display = 'none';
     }
+  }
+}
+
+// ========== Cloud Sync (Supabase) ==========
+
+function getCloudConfig() {
+  const url = localStorage.getItem('fw_cloudUrl');
+  const key = localStorage.getItem('fw_cloudKey');
+  if(url && key) return { url, key };
+  return null;
+}
+
+function saveCloudConfig(url, key) {
+  localStorage.setItem('fw_cloudUrl', url);
+  localStorage.setItem('fw_cloudKey', key);
+}
+
+function clearCloudConfig() {
+  localStorage.removeItem('fw_cloudUrl');
+  localStorage.removeItem('fw_cloudKey');
+  localStorage.removeItem('fw_lastSync');
+}
+
+function openSyncModal() {
+  const config = getCloudConfig();
+  const modal = document.getElementById('syncModal');
+  const content = document.getElementById('syncModalContent');
+
+  if(config) {
+    content.innerHTML = `
+      <h2>☁️ 云同步</h2>
+      <p class="subtitle">数据已连接云端，多设备自动同步</p>
+      <div class="sync-status-box">
+        <div class="row"><span>连接状态</span><b id="modalSyncStatus">检查中...</b></div>
+        <div class="row"><span>上次同步</span><b id="modalLastSync">—</b></div>
+        <div class="row"><span>本地记录</span><b>${getDataCount()} 条</b></div>
+        <div class="row"><span>云端地址</span><b style="font-size:11px">${config.url.replace('https://','').replace('/rest/v1','')}</b></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);background:#f0f9ff;border-radius:8px;padding:12px;margin-bottom:8px;line-height:1.7">
+        <b>同步机制：</b>每次勾选任务后自动上传（延迟2秒），每次打开页面自动拉取云端最新数据。多设备使用时，最后操作的设备为准。
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="manualSync()">立即同步</button>
+        <button class="btn-danger" onclick="disconnectCloud()">断开连接</button>
+        <button class="btn-secondary" onclick="closeSyncModal()">关闭</button>
+      </div>
+    `;
+    checkSyncStatus();
+  } else {
+    content.innerHTML = `
+      <h2>☁️ 设置云同步</h2>
+      <p class="subtitle">连接 Supabase 免费云数据库，实现多设备数据自动同步</p>
+
+      <div style="margin-bottom:16px">
+        <div class="sync-step"><div class="num">1</div><div>打开 <code>supabase.com</code> 注册免费账号（支持 GitHub 登录）</div></div>
+        <div class="sync-step"><div class="num">2</div><div>点击 <code>New Project</code> 创建项目，选免费套餐，区域选 <b>Northeast Asia (Tokyo)</b></div></div>
+        <div class="sync-step"><div class="num">3</div><div>进入项目后，左侧菜单选 <code>SQL Editor</code>，粘贴右侧 SQL 并点 <b>Run</b> 运行</div></div>
+      </div>
+
+      <div class="sync-sql">CREATE TABLE workbench_data (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  data JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO workbench_data (id, data)
+VALUES ('main', '{}')
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE workbench_data
+  ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "all_access"
+  ON workbench_data
+  FOR ALL TO anon
+  USING (true)
+  WITH CHECK (true);</div>
+
+      <div class="sync-step" style="margin-bottom:14px"><div class="num">4</div><div>左侧菜单选 <code>Project Settings → API</code>，复制以下两个值填入下方</div></div>
+
+      <div class="sync-field">
+        <label>Project URL</label>
+        <input type="text" id="syncUrlInput" placeholder="https://xxxxx.supabase.co" style="font-size:13px">
+        <div class="hint">API Settings 页面最上方 "Project URL" 处复制</div>
+      </div>
+      <div class="sync-field">
+        <label>anon public key</label>
+        <input type="text" id="syncKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5c..." style="font-size:13px">
+        <div class="hint">API Settings 页面 "Project API keys" 下 "anon public" 处复制</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="connectCloud()">连接并同步</button>
+        <button class="btn-secondary" onclick="closeSyncModal()">取消</button>
+      </div>
+    `;
+  }
+
+  modal.classList.add('show');
+}
+
+function closeSyncModal() {
+  document.getElementById('syncModal').classList.remove('show');
+}
+
+async function connectCloud() {
+  const url = document.getElementById('syncUrlInput').value.trim();
+  const key = document.getElementById('syncKeyInput').value.trim();
+
+  if(!url || !key) {
+    alert('请填写完整的 URL 和 Key');
+    return;
+  }
+  if(!url.startsWith('https://') || !url.includes('supabase.co')) {
+    alert('URL 格式不正确，应以 https:// 开头且包含 supabase.co');
+    return;
+  }
+
+  saveCloudConfig(url, key);
+  closeSyncModal();
+  updateSyncButton();
+
+  alert('云同步已配置！正在尝试首次同步...');
+  await cloudSyncOnLoad();
+}
+
+async function disconnectCloud() {
+  if(!confirm('断开云同步连接？\n\n本地数据不会丢失，但不再自动同步。\n重新连接时需要再次填写 Supabase 信息。')) return;
+  clearCloudConfig();
+  closeSyncModal();
+  updateSyncButton();
+  updateSyncStatus('unconfigured');
+}
+
+// Debounced push - wait 2s after last change before uploading
+let syncPushTimer = null;
+function debouncedCloudPush() {
+  const config = getCloudConfig();
+  if(!config) return;
+
+  if(syncPushTimer) clearTimeout(syncPushTimer);
+  updateSyncStatus('syncing');
+  syncPushTimer = setTimeout(() => {
+    cloudPush().then(() => {
+      updateSyncStatus('synced');
+    }).catch(err => {
+      console.error('Sync push error:', err);
+      updateSyncStatus('error');
+    });
+  }, 2000);
+}
+
+// Push all local data to cloud (upsert)
+async function cloudPush() {
+  const config = getCloudConfig();
+  if(!config) return;
+
+  const data = getAllData();
+  const ts = new Date().toISOString();
+
+  const response = await fetch(config.url + '/rest/v1/workbench_data', {
+    method: 'POST',
+    headers: {
+      'apikey': config.key,
+      'Authorization': 'Bearer ' + config.key,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
+    },
+    body: JSON.stringify({
+      id: 'main',
+      data: data,
+      updated_at: ts
+    })
+  });
+
+  if(!response.ok) throw new Error('HTTP ' + response.status);
+  localStorage.setItem('fw_lastSync', ts);
+}
+
+// Pull cloud data
+async function cloudPull() {
+  const config = getCloudConfig();
+  if(!config) return null;
+
+  const response = await fetch(config.url + '/rest/v1/workbench_data?id=eq.main&select=data,updated_at', {
+    headers: {
+      'apikey': config.key,
+      'Authorization': 'Bearer ' + config.key
+    }
+  });
+
+  if(!response.ok) throw new Error('HTTP ' + response.status);
+  const result = await response.json();
+  if(result.length === 0) return null;
+  return { data: result[0].data, updated_at: result[0].updated_at };
+}
+
+// Auto sync on page load: pull cloud → merge → push local
+async function cloudSyncOnLoad() {
+  const config = getCloudConfig();
+  if(!config) {
+    updateSyncStatus('unconfigured');
+    return;
+  }
+
+  updateSyncStatus('syncing');
+  try {
+    const cloud = await cloudPull();
+    if(cloud && cloud.data && typeof cloud.data === 'object') {
+      // Merge: cloud data takes priority for existing keys
+      let changed = false;
+      Object.keys(cloud.data).forEach(key => {
+        if(key.startsWith('fw_') && key !== 'fw_cloudUrl' && key !== 'fw_cloudKey') {
+          const localVal = localStorage.getItem(key);
+          const cloudVal = cloud.data[key];
+          if(localVal !== cloudVal) {
+            if(cloudVal) localStorage.setItem(key, cloudVal);
+            else localStorage.removeItem(key);
+            changed = true;
+          }
+        }
+      });
+      if(changed) {
+        loadState();
+        updateDoneCount();
+        updateDataStatus();
+      }
+    }
+    // Push current local state (covers local data not yet in cloud)
+    await cloudPush();
+    updateSyncStatus('synced');
+  } catch(err) {
+    console.error('Sync on load error:', err);
+    updateSyncStatus('error');
+  }
+}
+
+// Manual sync: push then pull
+async function manualSync() {
+  const config = getCloudConfig();
+  if(!config) return;
+
+  closeSyncModal();
+  updateSyncStatus('syncing');
+
+  try {
+    await cloudPush();
+    const cloud = await cloudPull();
+    if(cloud && cloud.data) {
+      Object.keys(cloud.data).forEach(key => {
+        if(key.startsWith('fw_') && key !== 'fw_cloudUrl' && key !== 'fw_cloudKey') {
+          const cloudVal = cloud.data[key];
+          if(cloudVal) localStorage.setItem(key, cloudVal);
+        }
+      });
+      loadState();
+      updateDoneCount();
+      updateDataStatus();
+    }
+    updateSyncStatus('synced');
+    alert('同步完成！云端和本地数据已一致。');
+  } catch(err) {
+    console.error('Manual sync error:', err);
+    updateSyncStatus('error');
+    alert('同步失败：' + err.message + '\n请检查网络连接和 Supabase 配置。');
+  }
+}
+
+// Check sync status for modal display
+async function checkSyncStatus() {
+  const lastSync = localStorage.getItem('fw_lastSync');
+  const modalLastSync = document.getElementById('modalLastSync');
+  if(modalLastSync && lastSync) {
+    const d = new Date(lastSync);
+    modalLastSync.textContent = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  const modalStatus = document.getElementById('modalSyncStatus');
+  if(modalStatus) {
+    modalStatus.textContent = '检查中...';
+    try {
+      const cloud = await cloudPull();
+      if(cloud) {
+        modalStatus.innerHTML = '<span style="color:#10b981;font-weight:700">● 已连接</span>';
+      } else {
+        modalStatus.innerHTML = '<span style="color:#f59e0b">● 已连接（云端无数据）</span>';
+      }
+    } catch(err) {
+      modalStatus.innerHTML = '<span style="color:#ef4444;font-weight:700">● 连接失败</span>';
+    }
+  }
+}
+
+// Update sync status indicator
+function updateSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const btn = document.getElementById('syncBtn');
+  const barItem = document.getElementById('syncBarItem');
+
+  if(!dot) return;
+  dot.className = 'sync-dot';
+
+  switch(status) {
+    case 'synced':
+      dot.classList.add('on');
+      if(btn) btn.classList.remove('offline');
+      if(barItem) barItem.innerHTML = '☁️ <b style="color:#10b981">已同步</b>';
+      break;
+    case 'syncing':
+      dot.classList.add('spin');
+      if(btn) btn.classList.remove('offline');
+      if(barItem) barItem.innerHTML = '☁️ 同步中...';
+      break;
+    case 'error':
+      dot.classList.add('err');
+      if(btn) btn.classList.remove('offline');
+      if(barItem) barItem.innerHTML = '☁️ <b style="color:#ef4444">同步失败</b>';
+      break;
+    case 'unconfigured':
+      dot.classList.add('off');
+      if(btn) btn.classList.add('offline');
+      if(barItem) barItem.innerHTML = '☁️ <b>未配置</b>';
+      break;
+  }
+}
+
+// Update sync button appearance based on config
+function updateSyncButton() {
+  const config = getCloudConfig();
+  const dot = document.getElementById('syncDot');
+  const btn = document.getElementById('syncBtn');
+
+  if(config) {
+    if(btn) btn.classList.remove('offline');
+    if(dot) { dot.className = 'sync-dot on'; }
+  } else {
+    if(btn) btn.classList.add('offline');
+    if(dot) dot.className = 'sync-dot off';
   }
 }
 </script>
