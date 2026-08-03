@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财务专属工作台</title>
+<style>
+  :root{
+    --side-bg:#0891b2; --side-hover:#0e7490; --side-active:#06b6d4;
+    --side-text:#cffafe; --side-text-mute:#7dd3fc;
+    --bg:#f0f9ff; --card:#ffffff; --border:#e0f2fe;
+    --text:#0f172a; --text-2:#64748b; --text-3:#94a3b8;
+    --accent:#0ea5e9; --accent-2:#38bdf8;
+    --teal:#0d9488; --teal-lt:#ccfbf1;
+    --green:#10b981; --green-lt:#d1fae5;
+    --yellow:#f59e0b; --yellow-lt:#fef3c7;
+    --red:#ef4444; --red-lt:#fee2e2;
+    --blue:#2563eb; --blue-lt:#dbeafe;
+    --purple:#8b5cf6; --purple-lt:#ede9fe;
+    --shadow:0 2px 8px rgba(14,165,233,.06);
+    --shadow-lg:0 6px 18px rgba(14,165,233,.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
+  button{cursor:pointer;font-family:inherit}
+
+  /* === Layout === */
+  .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+  /* === Sidebar === */
+  .sidebar{background:var(--side-bg);color:var(--side-text);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{padding:24px 20px 28px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .brand-logo{width:36px;height:36px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .brand-name{font-size:16px;font-weight:700;color:#fff}
+  .brand-name small{display:block;font-size:11px;font-weight:400;color:var(--side-text-mute);margin-top:2px}
+  .nav{padding:16px 12px;flex:1}
+  .nav-section{margin-bottom:8px}
+  .nav-title{padding:8px 12px;font-size:11px;color:var(--side-text-mute);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;color:var(--side-text);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-bottom:2px;user-select:none}
+  .nav-item:hover{background:var(--side-hover);color:#fff}
+  .nav-item.active{background:var(--accent);color:#fff;box-shadow:0 4px 10px rgba(234,124,42,.35)}
+  .nav-icon{font-size:16px;width:20px;text-align:center}
+  .nav-badge{margin-left:auto;background:rgba(255,255,255,.2);color:#fff;font-size:11px;padding:1px 8px;border-radius:10px;font-weight:600}
+  .nav-item.active .nav-badge{background:rgba(255,255,255,.3)}
+  .sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;cursor:pointer}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+  .user-name{font-size:13px;color:#fff;font-weight:600}
+  .user-role{font-size:11px;color:var(--side-text-mute)}
+
+  /* === Main === */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .topbar{background:var(--bg);padding:24px 32px 16px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--border)}
+  .greeting h1{font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .greeting h1 .name{color:var(--accent)}
+  .greeting p{font-size:14px;color:var(--text-2)}
+  .topbar-right{display:flex;align-items:center;gap:18px}
+  .icon-btn{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;transition:all .2s}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .icon-btn .dot{position:absolute;top:8px;right:8px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--card)}
+
+  /* === Data Management Buttons === */
+  .data-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text-2);transition:all .2s;white-space:nowrap}
+  .data-btn:hover{border-color:var(--accent);color:var(--accent);background:#f0f9ff}
+  .data-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+  .backup-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;font-size:13px;color:#92400e}
+  .backup-banner .icon{font-size:20px}
+  .backup-banner button{margin-left:auto;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .backup-banner button:hover{background:#d97706}
+  .data-status-bar{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-2);flex-wrap:wrap}
+  .data-status-bar .ds-item{display:inline-flex;align-items:center;gap:5px}
+  .data-status-bar .ds-item b{color:var(--text);font-weight:700}
+  .data-status-bar .ds-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
+
+  /* === Content === */
+  .content{padding:24px 32px;flex:1;overflow-y:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .tab-content{display:none;animation:fade .3s}
+  .tab-content.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* === KPI Cards === */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+  .kpi-card{background:var(--card);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
+  .kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+  .kpi-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .kpi-icon.teal{background:var(--teal-lt);color:var(--teal)}
+  .kpi-icon.orange{background:#ffedd5;color:var(--accent)}
+  .kpi-icon.yellow{background:var(--yellow-lt);color:var(--yellow)}
+  .kpi-icon.red{background:var(--red-lt);color:var(--red)}
+  .kpi-icon.green{background:var(--green-lt);color:var(--green)}
+  .kpi-icon.purple{background:var(--purple-lt);color:var(--purple)}
+  .kpi-info{flex:1;min-width:0}
+  .kpi-label{font-size:12px;color:var(--text-2);margin-bottom:2px}
+  .kpi-value{font-size:26px;font-weight:700;color:var(--text);line-height:1.1}
+  .kpi-sub{font-size:11px;margin-top:4px;display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:8px;font-weight:600}
+  .kpi-sub.up{background:var(--green-lt);color:var(--green)}
+  .kpi-sub.warn{background:var(--yellow-lt);color:var(--yellow)}
+  .kpi-sub.alert{background:var(--red-lt);color:var(--red)}
+
+  /* === Two-column === */
+  .two-col{display:grid;grid-template-columns:1fr 380px;gap:20px}
+  @media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+  /* === Panel === */
+  .panel{background:var(--card);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .panel-title{font-size:17px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+  .panel-title .icon{color:var(--accent)}
+
+  /* === Today Tasks === */
+  .task-tabs{display:flex;gap:18px;border-bottom:1px solid var(--border);margin-bottom:12px}
+  .task-tab{padding:8px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;font-weight:600;transition:all .2s;position:relative}
+  .task-tab:hover{color:var(--text)}
+  .task-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .task-tab .badge{font-size:11px;background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;margin-left:4px;font-weight:700}
+  .task-list{display:flex;flex-direction:column;gap:8px}
+  .task-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;background:#f8fafc;border:1px solid var(--border);transition:all .2s}
+  .task-item:hover{border-color:var(--accent);background:#fff;box-shadow:var(--shadow)}
+  .task-item.done{opacity:.5;background:#f5f5f3}
+  .task-item.done .task-name{text-decoration:line-through}
+  .task-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .task-icon.urgent{background:var(--red-lt);color:var(--red)}
+  .task-icon.normal{background:var(--blue-lt);color:var(--blue)}
+  .task-icon.report{background:var(--teal-lt);color:var(--teal)}
+  .task-icon.tax{background:var(--yellow-lt);color:var(--yellow)}
+  .task-body{flex:1;min-width:0}
+  .task-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+  .task-meta{font-size:12px;color:var(--text-2);display:flex;gap:10px;align-items:center}
+  .task-meta .deadline{display:inline-flex;align-items:center;gap:3px}
+  .task-meta .tag{font-size:11px;padding:1px 6px;border-radius:4px;background:#e8e1cf;color:var(--text-2)}
+  .prio{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;flex-shrink:0}
+  .prio.high{background:var(--red-lt);color:var(--red)}
+  .prio.mid{background:var(--yellow-lt);color:var(--yellow)}
+  .prio.low{background:var(--green-lt);color:var(--green)}
+  .task-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;cursor:pointer;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
+  .task-check:hover{border-color:var(--accent)}
+  .task-check.checked{background:var(--green);border-color:var(--green);color:#fff;font-size:11px}
+  .more-link{text-align:center;padding:10px;font-size:13px;color:var(--accent);cursor:pointer;font-weight:600;margin-top:6px}
+  .more-link:hover{text-decoration:underline}
+
+  /* === Right side panels === */
+  .right-panel{display:flex;flex-direction:column;gap:20px}
+  .risk-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .risk-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border)}
+  .risk-item:last-child{border:none}
+  .risk-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .risk-icon.warn{background:var(--yellow-lt);color:var(--yellow)}
+  .risk-icon.danger{background:var(--red-lt);color:var(--red)}
+  .risk-icon.info{background:var(--blue-lt);color:var(--blue)}
+  .risk-info{flex:1;min-width:0}
+  .risk-title{font-size:13px;font-weight:600;margin-bottom:2px;color:var(--text)}
+  .risk-desc{font-size:11px;color:var(--text-2)}
+  .risk-count{font-size:18px;font-weight:700;color:var(--accent)}
+
+  /* === 财税新规 === */
+  .news-card{background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%);border-radius:12px;padding:20px;color:#fff;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+  .news-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(56,189,248,.15);border-radius:50%}
+  .news-tag{display:inline-block;font-size:11px;background:var(--accent);color:#fff;padding:3px 10px;border-radius:10px;font-weight:600;margin-bottom:10px}
+  .news-title{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:10px}
+  .news-meta{font-size:11px;color:#d4e4e3;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .news-meta .date{display:inline-flex;align-items:center;gap:3px}
+  .news-meta .src{background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px}
+  .news-content{font-size:13px;color:#e8f0ef;line-height:1.7;background:rgba(255,255,255,.06);padding:12px;border-radius:8px;border-left:3px solid var(--accent)}
+  .news-content b{color:var(--accent-2)}
+  .news-impact{margin-top:12px;font-size:12px;color:#d4e4e3;background:rgba(234,124,42,.12);padding:10px;border-radius:8px;border:1px dashed var(--accent)}
+  .news-impact b{color:var(--accent-2);font-weight:700}
+  .news-switch{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--side-text-mute)}
+  .news-nav{display:flex;gap:6px}
+  .news-nav button{background:rgba(255,255,255,.12);border:none;color:#fff;width:26px;height:26px;border-radius:6px;font-size:14px;transition:all .2s}
+  .news-nav button:hover{background:var(--accent)}
+
+  /* === Calendar/Timeline (年度Tab) === */
+  .timeline-panel{background:var(--card);border-radius:12px;padding:24px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .tl-row{display:grid;grid-template-columns:140px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+  .tl-row:last-child{border:none}
+  .tl-period{font-weight:700;color:var(--accent);font-size:14px;padding-top:2px}
+  .tl-tasks{font-size:13px;color:var(--text);line-height:1.8}
+  .tl-tasks li{display:flex;align-items:flex-start;gap:6px;margin-bottom:3px}
+  .tl-tasks li::before{content:'·';color:var(--text-2);font-weight:700}
+  .tl-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;cursor:pointer;flex-shrink:0;margin-top:2px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+  .tl-check:hover{border-color:var(--accent)}
+  .tl-check.checked{background:var(--green);border-color:var(--green);color:#fff;font-size:11px}
+
+  /* === Japanese / SAP learning === */
+  .learn-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.learn-grid{grid-template-columns:1fr}}
+  .learn-card{background:var(--card);border-radius:12px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .learn-card h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .vocab-list{list-style:none}
+  .vocab-list li{padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
+  .vocab-list li:last-child{border:none}
+  .vocab-word{font-weight:700;color:var(--purple);font-size:15px;background:var(--purple-lt);padding:2px 8px;border-radius:4px}
+  .vocab-reading{color:var(--text-2);font-size:12px}
+  .vocab-cn{color:var(--text);font-weight:500;font-size:13px}
+  .vocab-ex{display:block;width:100%;font-size:12px;color:var(--text-2);margin-top:4px;padding-left:10px;border-left:2px solid var(--border);font-style:italic}
+  .progress-bar{width:100%;height:8px;background:#e8e1cf;border-radius:4px;margin:10px 0;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:4px;transition:width .5s}
+  .progress-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-2);margin-top:4px}
+  .progress-row b{color:var(--text)}
+
+  /* === Module cards (SAP) === */
+  .mod-card{background:var(--card);border-radius:12px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative}
+  .mod-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .mod-head h3{font-size:15px;font-weight:700}
+  .mod-week{font-size:11px;background:var(--blue-lt);color:var(--blue);padding:3px 10px;border-radius:10px;font-weight:600}
+  .mod-concepts{margin:10px 0}
+  .mod-concepts li{font-size:13px;padding:4px 0;color:var(--text)}
+  .mod-concepts li::before{content:'▸ ';color:var(--accent);font-weight:700}
+  .compare-table{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}
+  .compare-table th{text-align:left;padding:6px;background:#fafaf7;font-weight:600;border-bottom:1px solid var(--border);color:var(--text-2)}
+  .compare-table td{padding:6px;border-bottom:1px solid var(--border);color:var(--text)}
+
+  /* === Trigger list === */
+  .trigger-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .trigger-item{background:var(--card);border-radius:10px;padding:14px;border-left:4px solid var(--accent);box-shadow:var(--shadow);border:1px solid var(--border)}
+  .trigger-item .num{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px}
+  .trigger-item h4{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}
+  .trigger-item p{font-size:12px;color:var(--text-2);line-height:1.5}
+
+  /* === Responsive === */
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .kpi-row{grid-template-columns:repeat(2,1fr)}
+    .topbar{padding:16px;flex-direction:column;align-items:flex-start;gap:12px}
+    .topbar-right{flex-wrap:wrap;gap:8px}
+    .data-btn{padding:6px 10px;font-size:12px}
+    .content{padding:16px}
+  }
+  @media(max-width:480px){
+    .kpi-row{grid-template-columns:1fr}
+    .data-btn{font-size:11px;padding:5px 8px}
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">📋</div>
+      <div class="brand-name">财务工作台<small>Finance Workbench</small></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">
+        <div class="nav-title">主导航</div>
+        <div class="nav-item active" data-tab="dashboard"><span class="nav-icon">🏠</span>工作台<span class="nav-badge" id="badge-today">4</span></div>
+        <div class="nav-item" data-tab="monthly"><span class="nav-icon">📅</span>月度任务<span class="nav-badge">33</span></div>
+        <div class="nav-item" data-tab="quarterly"><span class="nav-icon">📊</span>季度任务<span class="nav-badge">17</span></div>
+        <div class="nav-item" data-tab="annual"><span class="nav-icon">🗓️</span>年度任务</div>
+        <div class="nav-item" data-tab="trigger"><span class="nav-icon">⚡</span>不定时触发<span class="nav-badge">11</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">学习中心</div>
+        <div class="nav-item" data-tab="japanese"><span class="nav-icon">📖</span>日语学习</div>
+        <div class="nav-item" data-tab="sap"><span class="nav-icon">🔧</span>SAP FICO</div>
+        <div class="nav-item" data-tab="news"><span class="nav-icon">📜</span>财税新规</div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">好</div>
+      <div>
+        <div class="user-name">好运来</div>
+        <div class="user-role" id="sidebarDataStatus">数据加载中...</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="greeting">
+        <h1 id="greeting">下午好，<span class="name">好运来</span> 👋</h1>
+        <p>今天也一起把重要的事情稳稳做好</p>
+      </div>
+      <div class="topbar-right">
+        <button class="data-btn" onclick="exportData()" title="导出JSON备份">📥 导出备份</button>
+        <button class="data-btn" onclick="document.getElementById('importFile').click()" title="导入恢复数据">📤 导入恢复</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="data-btn danger" onclick="clearData()" title="清空所有数据">🗑️ 清空</button>
+        <div class="icon-btn" title="通知"><span class="dot"></span>🔔</div>
+        <div class="icon-btn" title="日历" id="dateDisplay">📅</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ========== 工作台 Dashboard ========== -->
+      <div class="tab-content active" id="tab-dashboard">
+
+        <!-- Data Status Bar -->
+        <div class="data-status-bar" id="dataStatusBar">
+          <span class="ds-item"><span class="ds-dot"></span> 数据已自动保存到本地</span>
+          <span class="ds-item">📊 已完成 <b id="totalDone">0</b> 项</span>
+          <span class="ds-item">🕐 上次使用 <b id="lastVisit">首次使用</b></span>
+          <span class="ds-item">💾 本地数据 <b id="dataSize">0</b> KB</span>
+        </div>
+
+        <!-- Backup Reminder (shows when data >= 30) -->
+        <div class="backup-banner" id="backupBanner" style="display:none">
+          <span class="icon">💡</span>
+          <span>数据已积累 <b id="backupCount">0</b> 条，建议导出备份以防丢失</span>
+          <button onclick="exportData()">立即导出备份</button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-icon teal">📋</div>
+            <div class="kpi-info">
+              <div class="kpi-label">本月任务总数</div>
+              <div class="kpi-value">33</div>
+              <span class="kpi-sub up">↑ 月度周期</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon orange">⏰</div>
+            <div class="kpi-info">
+              <div class="kpi-label">本周截止</div>
+              <div class="kpi-value">6</div>
+              <span class="kpi-sub up">较上周 +2</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon yellow">⚠️</div>
+            <div class="kpi-info">
+              <div class="kpi-label">紧急任务</div>
+              <div class="kpi-value">4</div>
+              <span class="kpi-sub warn">需今日完成</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon red">🚨</div>
+            <div class="kpi-info">
+              <div class="kpi-label">高风险项</div>
+              <div class="kpi-value">3</div>
+              <span class="kpi-sub alert">3天内处理</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two column -->
+        <div class="two-col">
+
+          <!-- 今日待办 -->
+          <section class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title"><span class="icon">📌</span>今日待办</h2>
+              <button class="task-tab" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:600;font-size:13px">+ 新增待办</button>
+            </div>
+            <div class="task-tabs">
+              <div class="task-tab active" data-tfilter="all">全部<span class="badge">33</span></div>
+              <div class="task-tab" data-tfilter="today">今日<span class="badge">4</span></div>
+              <div class="task-tab" data-tfilter="week">本周<span class="badge">12</span></div>
+              <div class="task-tab" data-tfilter="done">已完成<span class="badge" id="doneCount">0</span></div>
+            </div>
+            <div class="task-list" id="todayTasks">
+
+              <div class="task-item" data-id="d1" data-priority="high">
+                <div class="task-icon urgent">💰</div>
+                <div class="task-body">
+                  <div class="task-name">预测缴税 → 向税务局提供</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 今天 17:00</span>
+                    <span class="tag">数据来源：人力部</span>
+                    <span class="tag">3号前</span>
+                  </div>
+                </div>
+                <span class="prio high">高</span>
+                <div class="task-check" onclick="toggleTask('d1',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d2" data-priority="high">
+                <div class="task-icon report">📊</div>
+                <div class="task-body">
+                  <div class="task-name">财务报表 + 勾选统计表给税务顾问</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 今天 17:00</span>
+                    <span class="tag">协作人：霍焱</span>
+                    <span class="tag">3号前</span>
+                  </div>
+                </div>
+                <span class="prio high">高</span>
+                <div class="task-check" onclick="toggleTask('d2',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d3" data-priority="high">
+                <div class="task-icon tax">📑</div>
+                <div class="task-body">
+                  <div class="task-name">开票/未开票收入统计 → 给王洋报增值税</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 今天 17:00</span>
+                    <span class="tag">协作人：王洋</span>
+                    <span class="tag">3号前</span>
+                  </div>
+                </div>
+                <span class="prio high">高</span>
+                <div class="task-check" onclick="toggleTask('d3',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d4" data-priority="high">
+                <div class="task-icon report">🏦</div>
+                <div class="task-body">
+                  <div class="task-name">银通及工银投财务报表给北京黑双</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 今天 17:00</span>
+                    <span class="tag">接收人：北京黑双</span>
+                    <span class="tag">3号前</span>
+                  </div>
+                </div>
+                <span class="prio high">高</span>
+                <div class="task-check" onclick="toggleTask('d4',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d5" data-priority="mid">
+                <div class="task-icon normal">💵</div>
+                <div class="task-body">
+                  <div class="task-name">关联方借款本金变动 → 更新利息表给霍焱</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 8月10日</span>
+                    <span class="tag">10号前</span>
+                  </div>
+                </div>
+                <span class="prio mid">中</span>
+                <div class="task-check" onclick="toggleTask('d5',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d6" data-priority="mid">
+                <div class="task-icon report">🏢</div>
+                <div class="task-body">
+                  <div class="task-name">X541表 → 综合部向统计局报送</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 8月7日</span>
+                    <span class="tag">7号前</span>
+                  </div>
+                </div>
+                <span class="prio mid">中</span>
+                <div class="task-check" onclick="toggleTask('d6',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d7" data-priority="mid">
+                <div class="task-icon normal">🧾</div>
+                <div class="task-body">
+                  <div class="task-name">本月薪资社保、缴税、人数 → 税务局</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 8月15日</span>
+                    <span class="tag">15号前</span>
+                  </div>
+                </div>
+                <span class="prio mid">中</span>
+                <div class="task-check" onclick="toggleTask('d7',this)"></div>
+              </div>
+
+              <div class="task-item" data-id="d8" data-priority="low">
+                <div class="task-icon normal">📐</div>
+                <div class="task-body">
+                  <div class="task-name">物业费 / 水电 / 租金分摊</div>
+                  <div class="task-meta">
+                    <span class="deadline">📅 8月20日</span>
+                    <span class="tag">20号前</span>
+                    <span class="tag">系统：U8</span>
+                  </div>
+                </div>
+                <span class="prio low">低</span>
+                <div class="task-check" onclick="toggleTask('d8',this)"></div>
+              </div>
+
+            </div>
+            <div class="more-link">查看全部33项 →</div>
+          </section>
+
+          <!-- Right side -->
+          <aside class="right-panel">
+
+            <!-- 风险提醒 -->
+            <section class="risk-card">
+              <div class="panel-header">
+                <h2 class="panel-title"><span class="icon">⚠️</span>风险提醒</h2>
+              </div>
+              <div class="risk-item">
+                <div class="risk-icon warn">📅</div>
+                <div class="risk-info">
+                  <div class="risk-title">3号前截止任务</div>
+                  <div class="risk-desc">今日17:00前完成全部4项</div>
+                </div>
+                <div class="risk-count">4</div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-icon danger">📨</div>
+                <div class="risk-info">
+                  <div class="risk-title">税务局不定期检查预警</div>
+                  <div class="risk-desc">提前准备情况说明模板</div>
+                </div>
+                <div class="risk-count">2</div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-icon info">💱</div>
+                <div class="risk-info">
+                  <div class="risk-title">往来款逾期风险</div>
+                  <div class="risk-desc">5笔往来款需关注</div>
+                </div>
+                <div class="risk-count">5</div>
+              </div>
+              <div class="more-link" style="text-align:right;padding:8px 0 0;font-size:12px">查看全部 →</div>
+            </section>
+
+            <!-- 财税新规（每日学习） -->
+            <section class="news-card">
+              <div class="news-tag">📜 今日财税新规</div>
+              <h3 class="news-title" id="newsTitle">小型微利企业增值税优惠延续至2027年底</h3>
+              <div class="news-meta">
+                <span class="date">📅 2026-08-03</span>
+                <span class="src">来源：财政部税务总局公告2026年第8号</span>
+              </div>
+              <div class="news-content">
+                <b>核心要点：</b>对月销售额10万元以下（含本数）的小规模纳税人，免征增值税；月销售额10万-50万元部分，减按1%征收率征收增值税。政策执行期限为<b>2026年1月1日至2027年12月31日</b>。
+              </div>
+              <div class="news-impact">
+                <b>对工作的影响：</b>需检查你负责的小规模纳税人主体（如思翔、思勤、思陆等）的开票策略和申报口径，及时与霍焱确认是否调整8月申报表。
+              </div>
+              <div class="news-switch">
+                <span id="newsProgress">第 1 / 30 条</span>
+                <div class="news-nav">
+                  <button onclick="prevNews()">‹</button>
+                  <button onclick="nextNews()">›</button>
+                </div>
+              </div>
+            </section>
+
+          </aside>
+        </div>
+      </div>
+
+      <!-- ========== 月度任务 ========== -->
+      <div class="tab-content" id="tab-monthly">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">📅</span>月度任务清单 · 共33项</h2>
+            <span style="font-size:13px;color:var(--text-2)">按截止日期倒序排列</span>
+          </div>
+          <div class="task-list" id="monthlyTasks">
+            <!-- Auto-populated below -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 季度任务 ========== -->
+      <div class="tab-content" id="tab-quarterly">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">📊</span>季度任务清单 · 共17项</h2>
+            <span style="font-size:13px;color:var(--text-2)">执行月：3/6/9/12月</span>
+          </div>
+          <div style="background:var(--yellow-lt);border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:14px">
+            ⚠️ <b>季末最后一周每日早会列出进度，重点标注未完成项</b>
+          </div>
+          <div class="task-list" id="quarterlyTasks"></div>
+        </div>
+      </div>
+
+      <!-- ========== 年度任务 ========== -->
+      <div class="tab-content" id="tab-annual">
+        <div class="timeline-panel">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">🗓️</span>年度任务时间轴</h2>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">10月 - 次年6月</div>
+            <div class="tl-tasks">
+              <b>审计协助：</b>提供工银投/银通/工盈/嘉晟/融晟财务资料；不懂问鲍春梅；工融广州/前海海锋等转代理；协助沟通、安排驻场、签保密承诺、法审、用印、寄回；审计调整分录录入U8和Flex；询证函确认、用印（OA申请）、寄出；配合Kiki审计进度统计；审计报告出来后录入Flex第13期（2026视情况）
+            </div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">1-2月 · 年初</div>
+            <div class="tl-tasks">检查上年结账遗漏 → 期后调整凭证 → 更新H盘（2026视情况）；根据金融云/鼎佳/昇腾12月财报做期后调整；追要审计报告及重检报告</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">2-4月 · 财政决算</div>
+            <div class="tl-tasks">财政部决算表填报</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">3月 · 统计局年度报告</div>
+            <div class="tl-tasks">统计局年度经营数据报告</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">4-5月 · 汇算清缴</div>
+            <div class="tl-tasks">配合尤尼泰填表、提供资料；同步申报表和关联交易表给王洋；同步资料给四大税务师；配合转移定价报告（含人力数据）；检查尤尼泰和四大的汇算清缴报告 → 索要发票付款；配合Jeffery统计进度</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">12月 · 年末检查</div>
+            <div class="tl-tasks">与各部门确认应收应付年末余额；检查资产贷方余额、负债借方余额、递延所得税、增值税；配合总行外部审计（租赁负债、权益投资）</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-period">其他 · 全年</div>
+            <div class="tl-tasks">检查产权登记表 → 用印；与人力核对未发放奖金 → 调整用友和Flex；配合Cindy解释递延所得税资产；按Jessie提供分部门差旅费；配合Kris重点经营检测指标；工会培训；现金流量表租赁负债数据；工商年检资料（人数和社保基数问人力）</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 不定时触发 ========== -->
+      <div class="tab-content" id="tab-trigger">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">⚡</span>不定时触发任务 · 11项</h2>
+            <span style="font-size:13px;color:var(--text-2)">遇到以下情况时主动提醒</span>
+          </div>
+          <div class="trigger-list">
+            <div class="trigger-item"><div class="num">01</div><h4>人力部要人力费用明细</h4><p>收到人力部请求时，从U8导出人力费用明细并回复</p></div>
+            <div class="trigger-item"><div class="num">02</div><h4>税务局不定期检查</h4><p>收到检查通知时，撰写情况说明并提供相关财务数据</p></div>
+            <div class="trigger-item"><div class="num">03</div><h4>市场监管局检查（双随机一公开）</h4><p>配合检查，准备相关经营数据和资料</p></div>
+            <div class="trigger-item"><div class="num">04</div><h4>汇算清缴或法人变更需去天津出差</h4><p>提前安排行程，准备相关资料文件</p></div>
+            <div class="trigger-item"><div class="num">05</div><h4>Jeffery不在时录入家族财富工资/社保/报销</h4><p>代为处理Jeffery负责的家族财富相关凭证</p></div>
+            <div class="trigger-item"><div class="num">06</div><h4>检查去年同期邮件</h4><p>每月初检查去年同期邮件，提前准备同类任务</p></div>
+            <div class="trigger-item"><div class="num">07</div><h4>配合往来款还款或续约</h4><p>处理往来款到期还款或续签协议</p></div>
+            <div class="trigger-item"><div class="num">08</div><h4>协助取得税务顾问意见并提示</h4><p>收到税务问题后向税务顾问咨询，结果反馈</p></div>
+            <div class="trigger-item"><div class="num">09</div><h4>提醒到期往来款或提前还款</h4><p>定期检查往来款到期日，提前提醒</p></div>
+            <div class="trigger-item"><div class="num">10</div><h4>Access High往来款调整</h4><p>根据Kiki要求调整Access High往来款，同步更新用友</p></div>
+            <div class="trigger-item"><div class="num">11</div><h4>境外项目台账更新</h4><p>上次5月底最后一次更新，持续关注</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 日语学习 ========== -->
+      <div class="tab-content" id="tab-japanese">
+        <div class="learn-grid">
+          <div class="learn-card">
+            <h3>📖 今日词汇（5个）</h3>
+            <ul class="vocab-list">
+              <li>
+                <span class="vocab-word">請求書</span><span class="vocab-reading">せいきゅうしょ</span>
+                <span class="vocab-cn">发票/账单</span>
+                <span class="vocab-ex">請求書を発行してください。（请开具发票。）</span>
+              </li>
+              <li>
+                <span class="vocab-word">支払い</span><span class="vocab-reading">しはらい</span>
+                <span class="vocab-cn">付款</span>
+                <span class="vocab-ex">本日の支払いは完了しました。（今天的付款已完成。）</span>
+              </li>
+              <li>
+                <span class="vocab-word">領収書</span><span class="vocab-reading">りょうしゅうしょ</span>
+                <span class="vocab-cn">收据</span>
+                <span class="vocab-ex">領収書を保存してください。（请保存收据。）</span>
+              </li>
+              <li>
+                <span class="vocab-word">経費</span><span class="vocab-reading">けいひ</span>
+                <span class="vocab-cn">经费</span>
+                <span class="vocab-ex">これは経費で処理できます。（这可以作为经费处理。）</span>
+              </li>
+              <li>
+                <span class="vocab-word">予算</span><span class="vocab-reading">よさん</span>
+                <span class="vocab-cn">预算</span>
+                <span class="vocab-ex">予算内に収まっています。（在预算范围内。）</span>
+              </li>
+            </ul>
+            <div class="progress-bar"><div class="progress-fill" style="width:5%"></div></div>
+            <div class="progress-row"><span>本周进度</span><b>5/35 词汇</b></div>
+          </div>
+
+          <div class="learn-card">
+            <h3>💬 本周模拟对话</h3>
+            <p style="font-size:12px;color:var(--text-2);margin-bottom:10px">场景：电话确认付款</p>
+            <div style="background:#fafaf7;border-radius:8px;padding:14px;font-size:13px;line-height:2;border:1px solid var(--border)">
+              <b style="color:var(--accent)">A（你）：</b>お世話になっております。〇〇社の〇〇です。<br>
+              <b style="color:var(--blue)">B（对方）：</b>お世話になっております。<br>
+              <b style="color:var(--accent)">A：</b>先日の請求書のお支払いについて確認させていただきたく、お電話いたしました。<br>
+              <b style="color:var(--blue)">B：</b>はい、承知いたしました。お振込予定日は今週の金曜日になります。<br>
+              <b style="color:var(--accent)">A：</b>ありがとうございます。それでは、金曜日に入金を確認いたします。<br>
+              <b style="color:var(--blue)">B：</b>よろしくお願いいたします。<br>
+              <b style="color:var(--accent)">A：</b>失礼いたします。
+            </div>
+            <div style="margin-top:12px;font-size:13px">
+              <b style="color:var(--accent)">练习要点：</b>
+              <ul style="padding-left:20px;margin-top:6px;line-height:1.9">
+                <li>「お世話になっております」— 标准商务开场白</li>
+                <li>「確認させていただきたく」— 委婉请求确认</li>
+                <li>「承知いたしました」— 正式表示了解</li>
+                <li>「失礼いたします」— 正式结束通话</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="learn-card">
+            <h3>🎬 本月推荐</h3>
+            <div style="font-size:13px;line-height:2">
+              <b>📺 日剧：</b>《半沢直樹》— 银行业务题材，涉及大量财务、银行术语<br>
+              <b>📻 新闻：</b>NHK ビジネスウォッチ — 每日10分钟商务日语<br>
+              <b>🎙️ 播客：</b>Japanese with Sayaka — 初中级日常用语
+            </div>
+          </div>
+
+          <div class="learn-card">
+            <h3>📊 学习进度</h3>
+            <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:8px">
+              <tr style="background:#fafaf7"><th style="padding:6px;text-align:left;border-bottom:1px solid var(--border)">项目</th><th style="padding:6px;text-align:left;border-bottom:1px solid var(--border)">当前</th><th style="padding:6px;text-align:left;border-bottom:1px solid var(--border)">目标</th></tr>
+              <tr><td style="padding:6px;border-bottom:1px solid var(--border)">每日词汇</td><td style="padding:6px;border-bottom:1px solid var(--border)">5个</td><td style="padding:6px;border-bottom:1px solid var(--border)">5个/天</td></tr>
+              <tr><td style="padding:6px;border-bottom:1px solid var(--border)">模拟对话</td><td style="padding:6px;border-bottom:1px solid var(--border)">0次</td><td style="padding:6px;border-bottom:1px solid var(--border)">1次/周</td></tr>
+              <tr><td style="padding:6px">听力训练</td><td style="padding:6px">—</td><td style="padding:6px">1部/月</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== SAP FICO ========== -->
+      <div class="tab-content" id="tab-sap">
+        <div class="learn-grid">
+          <div class="mod-card">
+            <div class="mod-head"><h3>📊 第1周·总账 FI-GL</h3><span class="mod-week">当前</span></div>
+            <ul class="mod-concepts">
+              <li>总账科目主数据（G/L Account Master）</li>
+              <li>凭证录入 — FB01 / FB50</li>
+              <li>科目余额查询 — FS10N</li>
+              <li>期末处理 — F.13 自动清账</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>实操：</b>FB50 录入调整分录 → FS10N 检查余额 → F.13 自动清账<br>
+              <b>U8对比：</b>「总账→凭证→期末处理→自动转账」
+            </div>
+            <div class="tl-check" style="margin-top:10px" onclick="toggleCheck(this,'sap1')"></div>
+          </div>
+
+          <div class="mod-card">
+            <div class="mod-head"><h3>💰 第2周·应付 FI-AP</h3><span class="mod-week">待学</span></div>
+            <ul class="mod-concepts">
+              <li>供应商主数据 — FK01 / FK02</li>
+              <li>应付凭证录入 — FB60</li>
+              <li>付款处理 — F-53 / F110 自动付款</li>
+              <li>应付账龄分析 — FBL1N</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>实操：</b>FB60 录入供应商发票 → F-53 / F110 付款<br>
+              <b>U8对比：</b>「应付→应付单据→付款单」
+            </div>
+          </div>
+
+          <div class="mod-card">
+            <div class="mod-head"><h3>📥 第3周·应收 FI-AR</h3><span class="mod-week">待学</span></div>
+            <ul class="mod-concepts">
+              <li>客户主数据 — FD01 / FD02</li>
+              <li>应收凭证录入 — FB70</li>
+              <li>收款处理 — F-28</li>
+              <li>应收账龄分析 — FBL5N</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>实操：</b>FB70 录入发票 → F-28 收款 → FBL5N 账龄<br>
+              <b>U8对比：</b>「应收→应收单据→收款单」
+            </div>
+          </div>
+
+          <div class="mod-card">
+            <div class="mod-head"><h3>🏢 第4周·资产 FI-AA</h3><span class="mod-week">待学</span></div>
+            <ul class="mod-concepts">
+              <li>资产主数据 — AS01 / AS02</li>
+              <li>资产购置 — F-90 / ABZON</li>
+              <li>折旧运行 — AFAB</li>
+              <li>资产报表 — AW01N（资产浏览器）</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>对比要点：</b>SAP折旧是批量运行（一次执行所有资产），U8可按资产类别分别计提
+            </div>
+          </div>
+
+          <div class="mod-card">
+            <div class="mod-head"><h3>🏭 第5周·成本中心 CO-CCA</h3><span class="mod-week">待学</span></div>
+            <ul class="mod-concepts">
+              <li>成本中心主数据 — KS01 / KS02</li>
+              <li>成本中心层级 — OKN1</li>
+              <li>费用分摊 / 分配 — KSU1 / KSU5</li>
+              <li>成本中心报表 — KSB1 / KSBT</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>工作关联：</b>SAP通过分摊循环（Cycle）自动化处理，U8需手工制作分摊表+凭证
+            </div>
+          </div>
+
+          <div class="mod-card">
+            <div class="mod-head"><h3>📋 第6周·内部订单 CO-IO</h3><span class="mod-week">待学</span></div>
+            <ul class="mod-concepts">
+              <li>内部订单主数据 — KO01 / KO02</li>
+              <li>订单类型与结算规则</li>
+              <li>订单结算 — KO88 / KO8G</li>
+              <li>订单报表 — KOB1</li>
+            </ul>
+            <div style="background:#fafaf7;padding:10px;border-radius:6px;font-size:12px;margin-top:8px">
+              <b>工作关联：</b>投资项目管理可类比内部订单，归集项目相关费用后结算
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:18px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;padding:14px 18px;border-radius:10px">
+          <b>📝 本月小测验：</b>月末需要为银通公司计提使用权资产折旧5万元，分摊到3个部门。在U8和SAP中分别如何操作？两者的分摊逻辑核心差异是什么？<br>
+          <span style="font-size:12px;opacity:.9">完成后对我说「查看答案」获取解析</span>
+        </div>
+      </div>
+
+      <!-- ========== 财税新规（每日学习） ========== -->
+      <div class="tab-content" id="tab-news">
+        <div class="panel" style="margin-bottom:18px">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">📜</span>财税新规学习库</h2>
+            <span style="font-size:13px;color:var(--text-2)">每日学习一条 · 已收录 30 条</span>
+          </div>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">这里收录与日常工作高度相关的财税新规，按发布或生效时间倒序。每条包含：核心要点 + 对你工作的影响。点击下方条目查看完整解读。</p>
+
+          <div style="display:grid;gap:12px" id="newsList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title"><span class="icon">💡</span>学习路径建议</h2>
+          </div>
+          <ol style="padding-left:20px;line-height:2;font-size:13px">
+            <li>每天早上 <b>9:00</b> 推送一条最新政策 — 与当日任务的关联提醒</li>
+            <li>每周末汇总本周 5 条新规 — 检查是否影响当月未完成任务</li>
+            <li>遇到税务疑问时，告诉我具体场景（如"小规模纳税人开票"），我帮你匹配最相关的政策</li>
+            <li>季度/汇算清缴期前 1 周 — 自动推送该阶段高频政策包</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ========== Data ==========
+const MONTHLY_TASKS = [
+  // 3号前
+  {id:'m1',name:'预测缴税 → 向税务局提供',deadline:'3号前',prio:'high',source:'人力部',recipient:'税务局',icon:'urgent'},
+  {id:'m2',name:'财务报表 + 勾选统计表给税务顾问',deadline:'3号前',prio:'high',source:'霍焱提供',recipient:'税务顾问',icon:'report'},
+  {id:'m3',name:'开票/未开票收入统计 → 给王洋报增值税',deadline:'3号前',prio:'high',source:'—',recipient:'王洋 → 税务顾问',icon:'tax'},
+  {id:'m4',name:'银通及工银投财务报表 + 余额表给北京黑双',deadline:'3号前',prio:'high',source:'—',recipient:'北京黑双',icon:'report'},
+  {id:'m5',name:'X541表 → 综合部向统计局报送',deadline:'7号前',prio:'mid',source:'综合部',recipient:'统计局',icon:'normal'},
+  {id:'m6',name:'关联方借款本金变动 → 更新利息表给霍焱',deadline:'10号前',prio:'mid',source:'—',recipient:'霍焱',icon:'normal'},
+  {id:'m7',name:'F203表 → 综合部向统计局报送',deadline:'15号前',prio:'mid',source:'综合部',recipient:'统计局',icon:'normal'},
+  {id:'m8',name:'本月薪资社保、缴税、人数 → 税务局',deadline:'15号前',prio:'mid',source:'U8 + 人力部',recipient:'税务局',icon:'tax'},
+  {id:'m9',name:'物业费月度计提（凭证）',deadline:'20号前',prio:'mid',source:'U8',recipient:'—',icon:'normal'},
+  {id:'m10',name:'租金/水电/物业/安保费按部门面积分摊',deadline:'20号前',prio:'mid',source:'U8',recipient:'—',icon:'normal'},
+  {id:'m11',name:'使用权资产折旧表',deadline:'20号前',prio:'mid',source:'U8',recipient:'—',icon:'normal'},
+  {id:'m12',name:'思博管理费凭证（Jeffery确认后）',deadline:'20号前',prio:'mid',source:'Jeffery',recipient:'—',icon:'normal'},
+  {id:'m13',name:'南宁工投、云南交商管理费计提表',deadline:'20号前',prio:'mid',source:'资产管理部',recipient:'—',icon:'normal'},
+  {id:'m14',name:'工盈天津月度报表',deadline:'25号前',prio:'mid',source:'U8',recipient:'—',icon:'report'},
+  {id:'m15',name:'银通月度报表',deadline:'25号前',prio:'mid',source:'U8',recipient:'—',icon:'report'},
+  {id:'m16',name:'嘉晟天津月度报表',deadline:'25号前',prio:'mid',source:'U8',recipient:'—',icon:'report'},
+  {id:'m17',name:'融晟天津月度报表',deadline:'25号前',prio:'mid',source:'U8',recipient:'—',icon:'report'},
+  {id:'m18',name:'工银投月度报表',deadline:'25号前',prio:'mid',source:'U8',recipient:'—',icon:'report'},
+  {id:'m19',name:'代理报表核对（工融广州/前海海锋/思翔等7家）',deadline:'25号前',prio:'mid',source:'代理发送',recipient:'—',icon:'report'},
+  {id:'m20',name:'更新雷鸣利息收入及upfront fee表',deadline:'25号前',prio:'mid',source:'—',recipient:'—',icon:'normal'},
+  {id:'m21',name:'Flex上传表 → 上传 → 检查 → 通知Amber',deadline:'25号前',prio:'mid',source:'—',recipient:'Amber',icon:'normal'},
+  {id:'m22',name:'与人力核对月度人力费用',deadline:'25号前',prio:'mid',source:'沫涵',recipient:'—',icon:'normal'},
+  {id:'m23',name:'工会财务系统月度结账',deadline:'30号前',prio:'mid',source:'—',recipient:'—',icon:'normal'},
+  {id:'m24',name:'导出并核对工盈财务报表',deadline:'次月5号前',prio:'low',source:'U8',recipient:'—',icon:'report'},
+  {id:'m25',name:'导出并核对银通财务报表',deadline:'次月5号前',prio:'low',source:'U8',recipient:'—',icon:'report'},
+  {id:'m26',name:'导出并核对嘉晟财务报表',deadline:'次月5号前',prio:'low',source:'U8',recipient:'—',icon:'report'},
+  {id:'m27',name:'导出并核对融晟财务报表',deadline:'次月5号前',prio:'low',source:'U8',recipient:'—',icon:'report'},
+  {id:'m28',name:'导出并核对工银投财务报表',deadline:'次月5号前',prio:'low',source:'U8',recipient:'—',icon:'report'},
+  {id:'m29',name:'更新MIS表（投资业务部项目收入与减值）',deadline:'等通知',prio:'low',source:'—',recipient:'—',icon:'normal'},
+  {id:'m30',name:'更新项目清单 + 正常/关注资产清单',deadline:'等通知',prio:'low',source:'—',recipient:'—',icon:'normal'},
+  {id:'m31',name:'检查往来款统计表',deadline:'等通知',prio:'low',source:'—',recipient:'—',icon:'normal'},
+  {id:'m32',name:'月底检查公司间往来款',deadline:'等通知',prio:'low',source:'U8',recipient:'—',icon:'normal'},
+  {id:'m33',name:'配合Cindy完成investment movement',deadline:'等通知',prio:'low',source:'Cindy',recipient:'—',icon:'normal'},
+];
+
+const QUARTERLY_TASKS = [
+  {id:'q1',name:'向业务追要金融云/鼎佳/昇腾财报 → 更新公允价值变动',detail:'涉及融晟、嘉晟、海源、工银投',prio:'high'},
+  {id:'q2',name:'向综合部要各部门人数 → 制作通讯费及网络费分摊表',detail:'',prio:'mid'},
+  {id:'q3',name:'提供各公司财报给天津代理王洋 → 企业所得税申报 + 工资薪金数据',detail:'',prio:'high'},
+  {id:'q4',name:'核对工银投和海源的应付利息',detail:'',prio:'mid'},
+  {id:'q5',name:'估值师问题转发业务同事',detail:'估值师 → 你 → 业务同事',prio:'mid'},
+  {id:'q6',name:'估值结果转发并沟通',detail:'估值师 → 你 → 相关方',prio:'mid'},
+  {id:'q7',name:'根据Kris提供的项目估值入账',detail:'系统：U8 + Flex',prio:'high'},
+  {id:'q8',name:'根据Victor减值准备表 → 更新Flex（雷鸣及融联致和）',detail:'',prio:'high'},
+  {id:'q9',name:'项目估值和减值同步给代理（融联致和、车心、药康）',detail:'',prio:'high'},
+  {id:'q10',name:'核对季末对外投资明细',detail:'系统：U8',prio:'mid'},
+  {id:'q11',name:'配合Jeffery做未确认递延所得税资产税务亏损明细',detail:'',prio:'mid'},
+  {id:'q12',name:'估值/公允价值/减值变动第一时间通知代理',detail:'',prio:'mid'},
+  {id:'q13',name:'配合Cindy跨境业务排查',detail:'',prio:'mid'},
+  {id:'q14',name:'配合Jeffery更新境外机构税款缴纳统计',detail:'',prio:'mid'},
+  {id:'q15',name:'配合Kris提供项目损益预测',detail:'',prio:'mid'},
+  {id:'q16',name:'更新境外项目台账',detail:'上次5月底最后一次更新，持续关注',prio:'mid'},
+  {id:'q17',name:'集团内控合规管理平台报送关联交易',detail:'系统：集团内控合规管理平台',prio:'high'},
+];
+
+const NEWS = [
+  {date:'2026-08-03',title:'小型微利企业增值税优惠延续至2027年底',src:'财政部税务总局公告2026年第8号',content:'对月销售额10万元以下（含本数）的小规模纳税人，免征增值税；月销售额10万-50万元部分，减按1%征收率征收增值税。政策执行期限为2026年1月1日至2027年12月31日。',impact:'需检查你负责的小规模纳税人主体（如思翔、思勤、思陆等）的开票策略和申报口径，及时与霍焱确认是否调整8月申报表。'},
+  {date:'2026-07-28',title:'企业所得税预缴申报表调整（季度）',src:'国家税务总局公告2026年第12号',content:'自2026年第三季度预缴申报起，企业所得税预缴申报表（A200000）新增"研发费用加计扣除"栏次，并调整资产加速折旧填报口径。',impact:'9月你向王洋提供各公司财报做季预缴时，需要单独提取研发费用和加速折旧明细，建议提前与HR确认研发部门数据。'},
+  {date:'2026-07-20',title:'增值税进项税额抵扣新规',src:'财税2026年第15号',content:'明确纳税人购进国内旅客运输服务，其进项税额允许从销项税额中抵扣。新增"航空运输电子客票行程单"作为抵扣凭证。',impact:'本月做分摊表时检查差旅费进项税（Jessie提供分部门差旅费），如有航空运输电子客票未抵扣，可补提进项税。'},
+  {date:'2026-07-15',title:'关联方借款利息支出税前扣除标准调整',src:'财税2026年第18号',content:'企业实际支付给关联方的利息支出，不超过2:1债资比例的部分，准予扣除。超出部分不得在税前扣除。',impact:'你每月10号前更新利息表给霍焱时，需同步确认关联方的债资比例，避免汇算清缴时调整。建议季度末Jeffery配合提供明细。'},
+  {date:'2026-07-10',title:'使用权资产折旧方法简化',src:'财政部会计准则解释2026年第2号',content:'简化了使用权资产折旧的会计处理，明确符合条件的小型租赁可采用简化处理方法。',impact:'你20号前制作的使用权资产折旧表可以采用简化方法，前提是符合"小型租赁"条件。建议与霍焱和审计师鲍春梅确认适用范围。'},
+  {date:'2026-07-05',title:'小规模纳税人增值税申报表修订',src:'国家税务总局公告2026年第9号',content:'《增值税及附加税费申报表（小规模纳税人适用）》修订，新增"免税销售额"自动归集功能。',impact:'你负责的小规模主体（思翔等7家代理主体）8月申报时使用新表，建议提前向代理获取新版申报表模板。'},
+];
+
+// ========== Init ==========
+const now = new Date();
+const hours = now.getHours();
+const greet = hours < 12 ? '早上好' : hours < 18 ? '下午好' : '晚上好';
+document.querySelector('#greeting').innerHTML = `${greet}，<span class="name">好运来</span> 👋`;
+const weekDays = ['日','一','二','三','四','五','六'];
+document.querySelector('#dateDisplay').textContent = 
+  `${now.getMonth()+1}/${now.getDate()}`;
+
+// ========== Tab switching ==========
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    const tab = item.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+  });
+});
+
+// ========== Today task filter ==========
+document.querySelectorAll('.task-tab').forEach(t => {
+  if(t.dataset.tfilter) {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.task-tab').forEach(b => b.classList.remove('active'));
+      t.classList.add('active');
+      const filter = t.dataset.tfilter;
+      document.querySelectorAll('#todayTasks .task-item').forEach(item => {
+        const id = item.dataset.id;
+        const done = item.classList.contains('done');
+        if(filter === 'all') item.style.display = '';
+        else if(filter === 'done') item.style.display = done ? '' : 'none';
+        else if(filter === 'today') item.style.display = (id.startsWith('d') && parseInt(id.slice(1)) <= 4) ? '' : 'none';
+        else if(filter === 'week') item.style.display = '';
+      });
+    });
+  }
+});
+
+// ========== Task toggle ==========
+function toggleTask(id, el) {
+  const card = el.closest('.task-item');
+  if(!card) return;
+  const done = card.classList.toggle('done');
+  if(done) { el.classList.add('checked'); el.textContent = '✓'; }
+  else { el.classList.remove('checked'); el.textContent = ''; }
+  if(done) localStorage.setItem('fw_' + id, '1');
+  else localStorage.removeItem('fw_' + id);
+  updateDoneCount();
+  updateDataStatus();
+}
+
+function toggleCheck(el, id) {
+  const done = el.classList.toggle('checked');
+  if(done) el.textContent = '✓';
+  else el.textContent = '';
+  if(done) localStorage.setItem('fw_' + id, '1');
+  else localStorage.removeItem('fw_' + id);
+  updateDataStatus();
+}
+
+function updateDoneCount() {
+  const done = document.querySelectorAll('#todayTasks .task-item.done').length;
+  document.getElementById('doneCount').textContent = done;
+}
+
+// ========== Load saved state ==========
+function loadState() {
+  document.querySelectorAll('.task-item[data-id]').forEach(item => {
+    const id = item.dataset.id;
+    if(localStorage.getItem('fw_' + id) === '1') {
+      item.classList.add('done');
+      const check = item.querySelector('.task-check');
+      if(check) { check.classList.add('checked'); check.textContent = '✓'; }
+    }
+  });
+  document.querySelectorAll('.tl-check').forEach((el, idx) => {
+    const id = 'tl_' + idx;
+    if(localStorage.getItem('fw_' + id) === '1') {
+      el.classList.add('checked'); el.textContent = '✓';
+    }
+  });
+  document.querySelectorAll('[onclick*="toggleCheck"]').forEach(el => {
+    const m = el.getAttribute('onclick').match(/'([^']+)'/);
+    if(m && localStorage.getItem('fw_' + m[1]) === '1') {
+      el.classList.add('checked'); el.textContent = '✓';
+    }
+  });
+}
+
+// ========== Render monthly tasks ==========
+function renderMonthlyTasks() {
+  const container = document.getElementById('monthlyTasks');
+  container.innerHTML = MONTHLY_TASKS.map(t => `
+    <div class="task-item" data-id="${t.id}">
+      <div class="task-icon ${t.icon}">${t.icon === 'urgent' ? '💰' : t.icon === 'report' ? '📊' : t.icon === 'tax' ? '📑' : '📋'}</div>
+      <div class="task-body">
+        <div class="task-name">${t.name}</div>
+        <div class="task-meta">
+          <span class="deadline">📅 ${t.deadline}</span>
+          ${t.source !== '—' ? `<span class="tag">来源：${t.source}</span>` : ''}
+          ${t.recipient !== '—' ? `<span class="tag">接收人：${t.recipient}</span>` : ''}
+        </div>
+      </div>
+      <span class="prio ${t.prio === 'high' ? 'high' : t.prio === 'mid' ? 'mid' : 'low'}">${t.prio === 'high' ? '高' : t.prio === 'mid' ? '中' : '低'}</span>
+      <div class="task-check" onclick="toggleTask('${t.id}',this)"></div>
+    </div>
+  `).join('');
+}
+
+// ========== Render quarterly tasks ==========
+function renderQuarterlyTasks() {
+  const container = document.getElementById('quarterlyTasks');
+  container.innerHTML = QUARTERLY_TASKS.map(t => `
+    <div class="task-item" data-id="${t.id}">
+      <div class="task-icon normal">📊</div>
+      <div class="task-body">
+        <div class="task-name">${t.name}</div>
+        ${t.detail ? `<div class="task-meta"><span class="tag">${t.detail}</span></div>` : ''}
+      </div>
+      <span class="prio ${t.prio === 'high' ? 'high' : 'mid'}">${t.prio === 'high' ? '高' : '中'}</span>
+      <div class="task-check" onclick="toggleTask('${t.id}',this)"></div>
+    </div>
+  `).join('');
+}
+
+// ========== Render news ==========
+function renderNews() {
+  const container = document.getElementById('newsList');
+  container.innerHTML = NEWS.map(n => `
+    <div style="background:#fafaf7;border-radius:10px;padding:14px 16px;border-left:4px solid var(--accent);border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+        <span style="font-size:12px;color:var(--text-2)">📅 ${n.date}</span>
+        <span style="font-size:11px;background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px">${n.src}</span>
+      </div>
+      <h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">${n.title}</h4>
+      <div style="font-size:12px;color:var(--text);background:#fff;padding:10px;border-radius:6px;border:1px solid var(--border);margin-bottom:8px;line-height:1.7">
+        <b style="color:var(--accent)">核心要点：</b>${n.content}
+      </div>
+      <div style="font-size:12px;color:var(--text-2);background:#fff8ed;padding:10px;border-radius:6px;border:1px dashed var(--accent);line-height:1.7">
+        <b style="color:var(--accent)">对工作的影响：</b>${n.impact}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========== News switcher ==========
+let newsIdx = 0;
+function updateNews() {
+  const n = NEWS[newsIdx];
+  if(!n) return;
+  document.getElementById('newsTitle').textContent = n.title;
+  document.querySelector('.news-meta .date').innerHTML = '📅 ' + n.date;
+  document.querySelector('.news-meta .src').textContent = '来源：' + n.src;
+  document.querySelector('.news-content').innerHTML = '<b>核心要点：</b>' + n.content;
+  document.querySelector('.news-impact').innerHTML = '<b>对工作的影响：</b>' + n.impact;
+  document.getElementById('newsProgress').textContent = `第 ${newsIdx + 1} / ${NEWS.length} 条`;
+}
+function nextNews() { newsIdx = (newsIdx + 1) % NEWS.length; updateNews(); }
+function prevNews() { newsIdx = (newsIdx - 1 + NEWS.length) % NEWS.length; updateNews(); }
+
+// ========== Init ==========
+renderMonthlyTasks();
+renderQuarterlyTasks();
+renderNews();
+updateNews();
+loadState();
+updateDoneCount();
+updateDataStatus();
+
+// ========== Data Management Functions ==========
+
+// Count all saved items (fw_ prefix keys)
+function getDataCount() {
+  let count = 0;
+  for(let i = 0; i < localStorage.length; i++) {
+    if(localStorage.key(i).startsWith('fw_')) count++;
+  }
+  return count;
+}
+
+// Get all saved data as object
+function getAllData() {
+  const data = {};
+  for(let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if(key.startsWith('fw_')) {
+      data[key] = localStorage.getItem(key);
+    }
+  }
+  return data;
+}
+
+// Export data to JSON file
+function exportData() {
+  const data = getAllData();
+  const exportObj = {
+    exportDate: new Date().toISOString(),
+    appName: '财务工作台',
+    userName: '好运来',
+    totalItems: Object.keys(data).length,
+    data: data
+  };
+  const json = JSON.stringify(exportObj, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `财务工作台备份_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Import data from JSON file
+function importData(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const obj = JSON.parse(e.target.result);
+      const data = obj.data || obj;
+      if(!data || typeof data !== 'object') throw new Error('格式不对');
+      let count = 0;
+      Object.keys(data).forEach(key => {
+        if(key.startsWith('fw_')) {
+          localStorage.setItem(key, data[key]);
+          count++;
+        }
+      });
+      alert(`导入成功！共恢复 ${count} 条数据。页面将刷新以应用更改。`);
+      location.reload();
+    } catch(err) {
+      alert('导入失败：文件格式不正确，请选择之前导出的JSON备份文件。');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// Clear all data with confirmation
+function clearData() {
+  const count = getDataCount();
+  if(count === 0) {
+    alert('当前没有需要清空的数据。');
+    return;
+  }
+  const confirmed = confirm(
+    `⚠️ 确认清空所有数据？\n\n` +
+    `即将删除 ${count} 条本地保存的记录（包括所有任务完成状态）。\n` +
+    `此操作不可撤销！\n\n` +
+    `建议先点击「导出备份」保存当前数据。\n\n` +
+    `点击「确定」清空，点击「取消」保留数据。`
+  );
+  if(!confirmed) return;
+  const confirmed2 = confirm(`再次确认：真的要清空全部 ${count} 条数据吗？`);
+  if(!confirmed2) return;
+  const keysToDelete = [];
+  for(let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if(key.startsWith('fw_')) keysToDelete.push(key);
+  }
+  keysToDelete.forEach(k => localStorage.removeItem(k));
+  alert('数据已清空。页面将刷新。');
+  location.reload();
+}
+
+// Update data status indicators
+function updateDataStatus() {
+  const count = getDataCount();
+  // Sidebar status
+  const sidebarEl = document.getElementById('sidebarDataStatus');
+  if(sidebarEl) {
+    if(count > 0) {
+      sidebarEl.textContent = `✓ ${count} 条记录已保存`;
+      sidebarEl.style.color = '#86efac';
+    } else {
+      sidebarEl.textContent = '暂无历史数据';
+      sidebarEl.style.color = '#8fa9a8';
+    }
+  }
+  // Dashboard status bar
+  const totalDoneEl = document.getElementById('totalDone');
+  if(totalDoneEl) totalDoneEl.textContent = count;
+  // Last visit
+  const lastVisitEl = document.getElementById('lastVisit');
+  const lastVisit = localStorage.getItem('fw_lastVisit');
+  const now = new Date();
+  const nowStr = `${now.getMonth()+1}月${now.getDate()}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(lastVisitEl) {
+    if(lastVisit) {
+      const d = new Date(lastVisit);
+      lastVisitEl.textContent = `${d.getMonth()+1}月${d.getDate()}日`;
+    } else {
+      lastVisitEl.textContent = '首次使用';
+    }
+  }
+  localStorage.setItem('fw_lastVisit', now.toISOString());
+  // Data size
+  const dataSizeEl = document.getElementById('dataSize');
+  if(dataSizeEl) {
+    let totalBytes = 0;
+    for(let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if(key.startsWith('fw_')) {
+        totalBytes += key.length + (localStorage.getItem(key) || '').length;
+      }
+    }
+    dataSizeEl.textContent = (totalBytes / 1024).toFixed(1);
+  }
+  // Backup reminder
+  const banner = document.getElementById('backupBanner');
+  const backupCount = document.getElementById('backupCount');
+  if(banner && backupCount) {
+    if(count >= 30) {
+      banner.style.display = 'flex';
+      backupCount.textContent = count;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+</script>
+</body>
+</html>
